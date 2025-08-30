@@ -1,0 +1,58 @@
+basePath: /
+definitions:
+  model.User:
+    properties:
+      id:
+        type: integer
+      mail:
+        type: string
+      name:
+        type: string
+      nick:
+        type: string
+      password:
+        type: string
+      register:
+        type: string
+    type: object
+host: localhost:9000
+info:
+  contact:
+    name: Guilherme Flauzino
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Devbook
+  version: 1.0.0
+paths:
+  /login:
+    post:
+      description: Faz login na aplicação
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.User'
+        "403":
+          description: Forbidden
+          schema:
+            type: Erro
+      summary: Login
+      tags:
+      - Login
+  /register:
+    post:
+      description: Register a new user in Database
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.User'
+        "403":
+          description: Forbidden
+          schema:
+            type: Action
+      summary: Create an user
+      tags:
+      - User
+swagger: "2.0"
