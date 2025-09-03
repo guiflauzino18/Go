@@ -20,6 +20,7 @@ import (
 // @host localhost:9000
 // @BasePath /
 func main() {
+
 	//Carrega as variáveis de ambientes
 	config.LoadEnv()
 
