@@ -1,11 +1,12 @@
 package controllers
 
 import (
-	"go-project/response"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
-func Check(w http.ResponseWriter, r *http.Request) {
+func Check(c *gin.Context) {
 
-	response.JSON(w, http.StatusOK, "OK")
+	c.JSON(http.StatusOK, gin.H{"OK": "OK"})
 }

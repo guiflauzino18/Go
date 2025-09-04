@@ -7,7 +7,7 @@ import (
 
 type UserService interface {
 	Create(user model.User) (uint64, error)
-	FindByNickOrName(nickOrName string) ([]model.User, error)
+	FindByUsernameOrName(nickOrName string) ([]model.User, error)
 	FindByMail(mail string) (model.User, error)
 	FindById(ID uint64) (model.User, error)
 	FindAll() ([]model.User, error)
@@ -49,8 +49,8 @@ func (u userServiceImpl) FindByMail(mail string) (model.User, error) {
 }
 
 // FindByNickOrName implements UserService.
-func (u userServiceImpl) FindByNickOrName(nickOrName string) ([]model.User, error) {
-	return u.repo.FindByNickOrName(nickOrName)
+func (u userServiceImpl) FindByUsernameOrName(nickOrName string) ([]model.User, error) {
+	return u.repo.FindByUsernameOrName(nickOrName)
 }
 
 // Update implements UserService.

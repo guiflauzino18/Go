@@ -10,7 +10,8 @@ import (
 
 func UserRouters(r *gin.Engine, u controllers.UserController, e *casbin.Enforcer) {
 
-	user := r.Group("/user", middlewares.AuthValidate(), middlewares.ActionVAlidate(e))
+	user := r.Group("/api/user", middlewares.AuthValidate(), middlewares.ActionValidate(e))
+	//user := r.Group("/api/user")
 	user.GET("/all", u.FindAll)
 	user.GET("/:id", u.FindByID)
 	user.POST("/create", u.Create)

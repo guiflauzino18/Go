@@ -45,11 +45,9 @@ func setupDependecies(r *gin.Engine) {
 		log.Fatal("Erro ao conectar ao banco de dados")
 	}
 
-	routes.LoginRouters(r)
-
-	routes.SwaggerRouters(r)
-
 	casbin := setupCasbin()
+	routes.LoginRouters(r)
+	routes.SwaggerRouters(r)
 
 	userRepo := repository.NewUserRepo(db)
 	userService := service.NewUserService(*userRepo)
@@ -76,6 +74,17 @@ func setupCasbin() *casbin.Enforcer {
 	if err := e.LoadPolicy(); err != nil {
 		log.Fatal("Erro ao carregar políticas do Banco: ", err)
 	}
+
+	// Cria grupo master
+	e.AddPolicy("master", "/api/*", "GET")
+	e.AddPolicy("master", "/api/*", "POST")
+	e.AddPolicy("master", "/api/*", "PUT")
+	e.AddPolicy("master", "/api/*", "DELETE")
+	e.AddPolicy("master", "/api/*", "PATCH")
+
+	// Cria adiciona user sysadmin ao grupo master
+	e.AddGroupingPolicy("sysadmin", "master")
+	e.SavePolicy()
 
 	return e
 }

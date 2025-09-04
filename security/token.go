@@ -24,22 +24,20 @@ func TokenGenerate(userID uint64, username string) (string, error) {
 	return token.SignedString([]byte(config.SecretKey))
 }
 
-func TokenValidate(c *gin.Context) error {
+func TokenValidate(c *gin.Context) (jwt.MapClaims, error) {
 	r := c.Request
 	tokenString := extractTokenFromRequestHeader(r)
 	token, err := jwt.Parse(tokenString, getSecretKey)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		// salva username no contexto do gin
-		username := claims["username"].(string)
-		c.Set("username", username)
-		return nil
+
+		return claims, nil
 	}
 
-	return errors.New("Token inválido")
+	return nil, errors.New("Token inválido")
 }
 
 func extractTokenFromRequestHeader(r *http.Request) string {

@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"fmt"
 	"go-project/security"
 	"net/http"
 
@@ -11,24 +12,30 @@ import (
 func AuthValidate() gin.HandlerFunc {
 
 	return func(c *gin.Context) {
-		err := security.TokenValidate(c)
+		claims, err := security.TokenValidate(c)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"erro": err})
 			c.Abort()
 			return
 		}
 
+		//Recupera usuario e salva no contexto do gin
+		username := claims["username"].(string)
+		fmt.Println(claims)
+		c.Set("username", username)
 		c.Next()
 	}
 }
 
-func ActionVAlidate(e *casbin.Enforcer) gin.HandlerFunc {
+func ActionValidate(e *casbin.Enforcer) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		user, existis := c.Get("username")
+		user, exists := c.Get("username")
 		obj := c.FullPath()
 		act := c.Request.Method
 
-		if !existis {
+		fmt.Println(user)
+
+		if !exists {
 			c.JSON(http.StatusUnauthorized, gin.H{"erro": "Usuário não autenticado"})
 			c.Abort()
 			return
@@ -42,7 +49,7 @@ func ActionVAlidate(e *casbin.Enforcer) gin.HandlerFunc {
 		}
 
 		if !authorized {
-			c.JSON(http.StatusForbidden, gin.H{"erro": "Acesso Negado"})
+			c.JSON(http.StatusForbidden, gin.H{"erro": "Acesso Negado para " + fmt.Sprintf("%s", user)})
 			c.Abort()
 			return
 		}

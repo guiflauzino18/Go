@@ -12,7 +12,7 @@ import (
 type User struct {
 	ID       uint64    `json:"id,omitempty"`
 	Name     string    `json:"name,omitempty"`
-	Nick     string    `json:"nick,omitempty"`
+	Username string    `json:"username,omitempty"`
 	Mail     string    `json:"mail,omitempty"`
 	Password string    `json:"password,omitempty"`
 	Register time.Time `json:"register,omitempty"`
@@ -37,8 +37,8 @@ func (user *User) validate(action string) error {
 	if user.Name == "" {
 		return errors.New("Nome não pode ser em branco")
 	}
-	if user.Nick == "" {
-		return errors.New("Nick não pode ser em branco")
+	if user.Username == "" {
+		return errors.New("Username não pode ser em branco")
 	}
 	if user.Mail == "" {
 		return errors.New("Nome não pode ser em branco")
@@ -58,7 +58,7 @@ func (user *User) validate(action string) error {
 // Formata os campos para ser salvo
 func (user *User) format(action string) error {
 	user.Name = strings.TrimSpace(user.Name)
-	user.Nick = strings.TrimSpace(user.Nick)
+	user.Username = strings.TrimSpace(user.Username)
 	user.Mail = strings.TrimSpace(user.Mail)
 
 	if action == "create" {

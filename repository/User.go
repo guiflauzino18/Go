@@ -18,13 +18,13 @@ func NewUserRepo(db *sql.DB) *UserRepo {
 // Create cria um novo usuário no Banco
 func (repo UserRepo) Create(user model.User) (uint64, error) {
 	//Preparar query - Camada de segurança que evita ataque de SQL Iject
-	statement, err := repo.db.Prepare("insert into users (name, nick, mail,password) values (?, ?, ?, ?)")
+	statement, err := repo.db.Prepare("insert into users (name, username, mail,password) values (?, ?, ?, ?)")
 	if err != nil {
 		return 0, err
 	}
 	defer statement.Close() //Fechar Statement ao finalizar
 
-	result, err := statement.Exec(user.Name, user.Nick, user.Mail, user.Password)
+	result, err := statement.Exec(user.Name, user.Username, user.Mail, user.Password)
 	if err != nil {
 		return 0, err
 	}
@@ -40,11 +40,11 @@ func (repo UserRepo) Create(user model.User) (uint64, error) {
 }
 
 // Find Al Users
-func (repo UserRepo) FindByNickOrName(nickOrName string) ([]model.User, error) {
-	//Formatar nickOuName para conter os % no incio e fim
-	nickOrName = fmt.Sprintf("%%%s%%", nickOrName)
+func (repo UserRepo) FindByUsernameOrName(UsernameOrName string) ([]model.User, error) {
+	//Formatar UsernameOuName para conter os % no incio e fim
+	UsernameOrName = fmt.Sprintf("%%%s%%", UsernameOrName)
 
-	row, err := repo.db.Query("select id, name, nick, mail, register from users where name LIKE ? or nick LIKE ?", nickOrName)
+	row, err := repo.db.Query("select id, name, username, mail, register from users where name LIKE ? or Username LIKE ?", UsernameOrName)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (repo UserRepo) FindByNickOrName(nickOrName string) ([]model.User, error) {
 		if erro := row.Scan(
 			&user.ID,
 			&user.Name,
-			&user.Nick,
+			&user.Username,
 			&user.Mail,
 			&user.Register,
 		); erro != nil {
@@ -71,7 +71,7 @@ func (repo UserRepo) FindByNickOrName(nickOrName string) ([]model.User, error) {
 
 // Find By Mail
 func (repo UserRepo) FindByMail(mail string) (model.User, error) {
-	row, err := repo.db.Query("select id, password from users where mail = ?", mail)
+	row, err := repo.db.Query("select id,username, password from users where mail = ?", mail)
 	if err != nil {
 		return model.User{}, err
 	}
@@ -81,6 +81,7 @@ func (repo UserRepo) FindByMail(mail string) (model.User, error) {
 	if row.Next() {
 		if err := row.Scan(
 			&user.ID,
+			&user.Username,
 			&user.Password,
 		); err != nil {
 			return model.User{}, err
@@ -92,7 +93,7 @@ func (repo UserRepo) FindByMail(mail string) (model.User, error) {
 
 // Find By ID
 func (repo UserRepo) FindByID(ID uint64) (model.User, error) {
-	row, err := repo.db.Query("select id, name, nick, mail, register from users where id = ?", ID)
+	row, err := repo.db.Query("select id, name, username, mail, register from users where id = ?", ID)
 	if err != nil {
 		return model.User{}, err
 	}
@@ -103,7 +104,7 @@ func (repo UserRepo) FindByID(ID uint64) (model.User, error) {
 		if err := row.Scan(
 			&user.ID,
 			&user.Name,
-			&user.Nick,
+			&user.Username,
 			&user.Mail,
 			&user.Register,
 		); err != nil {
@@ -119,7 +120,7 @@ func (repo UserRepo) FindByID(ID uint64) (model.User, error) {
 
 // Find All Users
 func (repo UserRepo) FindAll() ([]model.User, error) {
-	row, err := repo.db.Query("select id, name, nick, register from users")
+	row, err := repo.db.Query("select id, name, username, register from users")
 	if err != nil {
 		return []model.User{}, err
 	}
@@ -131,7 +132,7 @@ func (repo UserRepo) FindAll() ([]model.User, error) {
 		if err := row.Scan(
 			&user.ID,
 			&user.Name,
-			&user.Nick,
+			&user.Username,
 			&user.Register,
 		); err != nil {
 			return []model.User{}, err
@@ -145,13 +146,13 @@ func (repo UserRepo) FindAll() ([]model.User, error) {
 
 // Update an User
 func (repo UserRepo) Update(ID uint64, user model.User) error {
-	statement, err := repo.db.Prepare("update users set name = ?, nick = ?, mail = ? where id = ?")
+	statement, err := repo.db.Prepare("update users set name = ?, username = ?, mail = ? where id = ?")
 	if err != nil {
 		return err
 	}
 	defer statement.Close()
 
-	_, err = statement.Exec(user.Name, user.Nick, user.Mail, ID)
+	_, err = statement.Exec(user.Name, user.Username, user.Mail, ID)
 	if err != nil {
 		return err
 	}
