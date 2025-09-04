@@ -1,0 +1,6 @@
+p, admin, /api/users, GET
+p, admin, /api/admin/create, POST
+p, user, /api/users, GET
+
+g, guilherme, admin
+g, joao, user

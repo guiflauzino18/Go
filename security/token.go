@@ -8,29 +8,34 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 )
 
 // Generate Token
-func TokenGenerate(userID uint64) (string, error) {
+func TokenGenerate(userID uint64, username string) (string, error) {
 	permissions := jwt.MapClaims{}
 	permissions["authorized"] = true
 	permissions["exp"] = time.Now().Add(time.Hour * 8).Unix()
 	permissions["userId"] = userID
+	permissions["username"] = username
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, permissions)
 	return token.SignedString([]byte(config.SecretKey))
 }
 
-func TokenValidate(r *http.Request) error {
-
+func TokenValidate(c *gin.Context) error {
+	r := c.Request
 	tokenString := extractTokenFromRequestHeader(r)
 	token, err := jwt.Parse(tokenString, getSecretKey)
 	if err != nil {
 		return err
 	}
 
-	if _, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		// salva username no contexto do gin
+		username := claims["username"].(string)
+		c.Set("username", username)
 		return nil
 	}
 

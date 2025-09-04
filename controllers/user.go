@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"go-project/model"
-	"go-project/security"
 	"go-project/service"
 	"net/http"
 	"strconv"
@@ -25,12 +24,7 @@ func (u *UserController) Create(c *gin.Context) {
 		return
 	}
 
-	hash, err := security.Hash(user.Password)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, err)
-		return
-	}
-	user.Password = string(hash)
+	err := user.Prepare("create")
 
 	id, err := u.service.Create(user)
 	if err != nil {

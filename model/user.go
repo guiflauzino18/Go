@@ -16,6 +16,7 @@ type User struct {
 	Mail     string    `json:"mail,omitempty"`
 	Password string    `json:"password,omitempty"`
 	Register time.Time `json:"register,omitempty"`
+	Role     string    `json:"role,omitempty"`
 }
 
 // Validar dados para cadastro do Usuario
@@ -47,7 +48,7 @@ func (user *User) validate(action string) error {
 		return errors.New("E-mail informado é inválido")
 	}
 
-	if action == "register" && user.Password == "" {
+	if action == "create" && user.Password == "" {
 		return errors.New("Senha não pode ser em branco")
 	}
 
@@ -60,7 +61,7 @@ func (user *User) format(action string) error {
 	user.Nick = strings.TrimSpace(user.Nick)
 	user.Mail = strings.TrimSpace(user.Mail)
 
-	if action == "register" {
+	if action == "create" {
 		passWithHash, err := security.Hash(user.Password)
 		if err != nil {
 			return err

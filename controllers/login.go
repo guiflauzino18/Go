@@ -50,7 +50,7 @@ func Login(c *gin.Context) {
 	}
 
 	// Se autenticação for válida gera token e o retorna
-	token, err := security.TokenGenerate(userDB.ID)
+	token, err := security.TokenGenerate(userDB.ID, userDB.Nick)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao ler dados " + err.Error()})
 		return

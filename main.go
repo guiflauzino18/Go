@@ -12,6 +12,8 @@ import (
 
 	_ "go-project/docs" // import dos docs gerados
 
+	"github.com/casbin/casbin/v2"
+	gormadapter "github.com/casbin/gorm-adapter/v3"
 	"github.com/gin-gonic/gin"
 )
 
@@ -47,8 +49,33 @@ func setupDependecies(r *gin.Engine) {
 
 	routes.SwaggerRouters(r)
 
+	casbin := setupCasbin()
+
 	userRepo := repository.NewUserRepo(db)
 	userService := service.NewUserService(*userRepo)
 	userController := controllers.NewUserController(userService)
-	routes.UserRouters(r, *userController)
+	routes.UserRouters(r, *userController, casbin)
+}
+
+func setupCasbin() *casbin.Enforcer {
+	db := config.DBConnection
+
+	// Adapter GORM
+	adapter, err := gormadapter.NewAdapter("mysql", db, true)
+	if err != nil {
+		log.Fatal("Erro ao criar conexao com Banco Casbin: ", err)
+	}
+
+	// Casbin Enforcer
+	e, err := casbin.NewEnforcer("config/casbin/model.conf", adapter)
+	if err != nil {
+		log.Fatal("Erro ao criar Casbin Enforcer: ", err)
+	}
+
+	// Carrega políticas do banco
+	if err := e.LoadPolicy(); err != nil {
+		log.Fatal("Erro ao carregar políticas do Banco: ", err)
+	}
+
+	return e
 }
