@@ -1,58 +1,69 @@
 package controllers
 
 import (
-	"encoding/json"
-	"go-project/database"
 	"go-project/model"
-	"go-project/repository"
-	"go-project/response"
-	"io"
+	"go-project/security"
+	"go-project/service"
 	"net/http"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
-// Login godoc
-// @Summary Create an user
-// @Description Register a new user in Database
-// @Tags User
-// @Success 200 {object} model.User
-// @Failure 403 Action Not permited
-// @Router /register [post]
-func Register(w http.ResponseWriter, r *http.Request) {
-	// Recupera dados do Body da REquest
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		response.ErrorJSON(w, http.StatusUnprocessableEntity, err)
-		return
-	}
+type UserController struct {
+	service service.UserService
+}
 
-	// Unmarshal do dados do body para o struct user
+func NewUserController(service service.UserService) *UserController {
+	return &UserController{service}
+}
+
+func (u *UserController) Create(c *gin.Context) {
 	var user model.User
-	if err = json.Unmarshal(body, &user); err != nil {
-		response.ErrorJSON(w, http.StatusBadRequest, err)
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"erro": err})
 		return
 	}
 
-	// Prepara os dados do usuario para ser salvo no banco
-	if err := user.Prepare("register"); err != nil {
-		response.ErrorJSON(w, http.StatusBadRequest, err)
-		return
-	}
-
-	// Conecta ao banco
-	db, err := database.Connect()
+	hash, err := security.Hash(user.Password)
 	if err != nil {
-		response.ErrorJSON(w, http.StatusInternalServerError, err)
+		c.JSON(http.StatusInternalServerError, err)
 		return
 	}
-	defer db.Close()
+	user.Password = string(hash)
 
-	repository := repository.NewUserRepo(db)
-	user.ID, err = repository.Create(user)
+	id, err := u.service.Create(user)
 	if err != nil {
-		response.ErrorJSON(w, http.StatusInternalServerError, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"erro": err})
 		return
 	}
 
-	response.JSON(w, http.StatusOK, user)
+	c.JSON(http.StatusOK, gin.H{"userid": id})
+}
+
+func (u *UserController) FindByID(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"erro": err})
+		return
+	}
+
+	user, err := u.service.FindById(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"erro": err})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"user": user})
+}
+
+func (u *UserController) FindAll(c *gin.Context) {
+	users, err := u.service.FindAll()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"erro": err})
+		return
+	}
+
+	c.JSON(http.StatusOK, users)
 
 }

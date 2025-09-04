@@ -3,13 +3,16 @@ package main
 import (
 	"fmt"
 	"go-project/config"
-	"go-project/route"
+	"go-project/controllers"
+	"go-project/database"
+	"go-project/repository"
+	"go-project/routes"
+	"go-project/service"
 	"log"
-	"net/http"
 
 	_ "go-project/docs" // import dos docs gerados
 
-	httpSwagger "github.com/swaggo/http-swagger"
+	"github.com/gin-gonic/gin"
 )
 
 // @title Devbook
@@ -23,14 +26,29 @@ func main() {
 	//Carrega as variáveis de ambientes
 	config.LoadEnv()
 
-	//Cria as rotas da API
-	r := route.CreateRouters()
+	// Router Gin
+	r := gin.Default()
 
-	// Rota do Swagger
-	r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
+	// Routes Configure
+	setupDependecies(r)
 
-	fmt.Printf("API on port %d", config.Port)
-	//Inicia o servidor web
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", config.Port), r))
+	// Inicia servidor web
+	r.Run(fmt.Sprintf(":%d", config.Port))
 
+}
+
+func setupDependecies(r *gin.Engine) {
+	db, err := database.Connect()
+	if err != nil {
+		log.Fatal("Erro ao conectar ao banco de dados")
+	}
+
+	routes.LoginRouters(r)
+
+	routes.SwaggerRouters(r)
+
+	userRepo := repository.NewUserRepo(db)
+	userService := service.NewUserService(*userRepo)
+	userController := controllers.NewUserController(userService)
+	routes.UserRouters(r, *userController)
 }

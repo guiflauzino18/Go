@@ -1,20 +1,22 @@
 package middlewares
 
 import (
-	"go-project/response"
 	"go-project/security"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
-func AuthValidate(next http.HandlerFunc) http.HandlerFunc {
+func AuthValidate() gin.HandlerFunc {
 
-	return func(w http.ResponseWriter, r *http.Request) {
-		if err := security.TokenValidate(r); err != nil {
-			response.ErrorJSON(w, http.StatusUnauthorized, err)
+	return func(c *gin.Context) {
+		err := security.TokenValidate(c.Request)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"erro": err})
+			c.Abort()
 			return
 		}
 
-		next(w, r)
+		c.Next()
 	}
-
 }

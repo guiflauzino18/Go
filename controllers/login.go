@@ -1,15 +1,14 @@
 package controllers
 
 import (
-	"encoding/json"
 	"go-project/database"
 	"go-project/model"
 	"go-project/repository"
-	"go-project/response"
 	"go-project/security"
-	"io"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 // Login godoc
@@ -19,26 +18,19 @@ import (
 // @Success 200 {object} model.User
 // @Failure 403 Erro no login
 // @Router /login [post]
-func Login(w http.ResponseWriter, r *http.Request) {
+func Login(c *gin.Context) {
 
 	//Recupera dados
-	body, erro := io.ReadAll(r.Body)
-	if erro != nil {
-		response.ErrorJSON(w, http.StatusUnprocessableEntity, erro)
-		return
-	}
-
-	//Unmarshal dos dados recebidos para o model user
 	var user model.User
-	if erro := json.Unmarshal(body, &user); erro != nil {
-		response.ErrorJSON(w, http.StatusBadRequest, erro)
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "Erro ao ler dados"})
 		return
 	}
 
 	//Conecta no Banco
 	db, erro := database.Connect()
 	if erro != nil {
-		response.ErrorJSON(w, http.StatusInternalServerError, erro)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao conectar no banco de dados"})
 		return
 	}
 	defer db.Close()
@@ -47,25 +39,25 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	repo := repository.NewUserRepo(db)
 	userDB, err := repo.FindByMail(user.Mail)
 	if err != nil {
-		response.ErrorJSON(w, http.StatusInternalServerError, err)
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "Erro ao ler dados"})
 		return
 	}
 
 	// Compara senha passada com hash da senha do banco
 	if err := security.CompareHashPassword(userDB.Password, user.Password); err != nil {
-		response.ErrorJSON(w, http.StatusUnauthorized, err)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Senha inválida"})
 		return
 	}
 
 	// Se autenticação for válida gera token e o retorna
 	token, err := security.TokenGenerate(userDB.ID)
 	if err != nil {
-		response.ErrorJSON(w, http.StatusInternalServerError, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao ler dados " + err.Error()})
 		return
 	}
 
 	userIdString := strconv.FormatUint(userDB.ID, 10)
 
-	response.JSON(w, http.StatusOK, model.LoginResponse{ID: userIdString, Token: token})
+	c.JSON(http.StatusOK, gin.H{"id": userIdString, "token": token})
 
 }

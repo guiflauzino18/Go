@@ -17,7 +17,7 @@ func NewUserRepo(db *sql.DB) *UserRepo {
 
 // Create cria um novo usuário no Banco
 func (repo UserRepo) Create(user model.User) (uint64, error) {
-	//Preparar query
+	//Preparar query - Camada de segurança que evita ataque de SQL Iject
 	statement, err := repo.db.Prepare("insert into users (name, nick, mail,password) values (?, ?, ?, ?)")
 	if err != nil {
 		return 0, err
@@ -40,7 +40,7 @@ func (repo UserRepo) Create(user model.User) (uint64, error) {
 }
 
 // Find Al Users
-func (repo UserRepo) FindByFilter(nickOrName string) ([]model.User, error) {
+func (repo UserRepo) FindByNickOrName(nickOrName string) ([]model.User, error) {
 	//Formatar nickOuName para conter os % no incio e fim
 	nickOrName = fmt.Sprintf("%%%s%%", nickOrName)
 
@@ -51,7 +51,7 @@ func (repo UserRepo) FindByFilter(nickOrName string) ([]model.User, error) {
 	defer row.Close()
 
 	var users []model.User
-	if row.Next() {
+	for row.Next() {
 		var user model.User
 		if erro := row.Scan(
 			&user.ID,
@@ -92,7 +92,7 @@ func (repo UserRepo) FindByMail(mail string) (model.User, error) {
 
 // Find By ID
 func (repo UserRepo) FindByID(ID uint64) (model.User, error) {
-	row, err := repo.db.Query("select id, name, nick, mail, register")
+	row, err := repo.db.Query("select id, name, nick, mail, register from users where id = ?", ID)
 	if err != nil {
 		return model.User{}, err
 	}
@@ -109,9 +109,38 @@ func (repo UserRepo) FindByID(ID uint64) (model.User, error) {
 		); err != nil {
 			return model.User{}, err
 		}
+
+		return user, nil
 	}
 
-	return user, nil
+	return model.User{}, fmt.Errorf("Não encontrado")
+
+}
+
+// Find All Users
+func (repo UserRepo) FindAll() ([]model.User, error) {
+	row, err := repo.db.Query("select id, name, nick, register from users")
+	if err != nil {
+		return []model.User{}, err
+	}
+	defer row.Close()
+
+	var users []model.User
+	for row.Next() {
+		var user model.User
+		if err := row.Scan(
+			&user.ID,
+			&user.Name,
+			&user.Nick,
+			&user.Register,
+		); err != nil {
+			return []model.User{}, err
+		}
+
+		users = append(users, user)
+	}
+
+	return users, nil
 }
 
 // Update an User
